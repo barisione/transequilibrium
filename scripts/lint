@@ -1,0 +1,14 @@
+#! /bin/bash
+
+if [ -e "../scripts/lint" ]; then
+    cd ..
+fi
+
+if [ ! -e "./scripts/lint" ]; then
+    echo "You should run $0 from the top-level dir." >&2
+    exit 1
+fi
+
+pylint \
+    --rcfile=scripts/pylintrc \
+    transequilibrium/*.py
