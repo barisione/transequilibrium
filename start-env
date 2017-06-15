@@ -1,0 +1,18 @@
+#! /bin/bash
+
+function _error_message() {
+    echo "ERROR: $1" >&2
+}
+
+function _error_exit() {
+    _error_message "$1"
+    exit 1
+}
+
+[ "$0" != "$BASH_SOURCE" ] || _error_exit "You should source this file, not execute it."
+
+if [ -d .env ]; then
+    source .env/bin/activate
+else
+    _error_message "The env doesn't exist, run 'make-env' to generate it."
+fi
