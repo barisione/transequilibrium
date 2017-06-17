@@ -103,7 +103,7 @@ class Translator:
         for retry in range(4):
             try:
                 response = requests.get(url, headers=headers)
-            except requests.exceptions.ConnectionError as exc:
+            except (requests.exceptions.ConnectionError, requests.exceptions.ReadTimeout) as exc:
                 # Sometimes there seems to be some transient flakiness, so we retry.
                 last_connection_error = exc
                 time.sleep(retry)
