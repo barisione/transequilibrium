@@ -1,9 +1,12 @@
 import configparser
+import os
 import sys
 
 import tweepy
 
 import azure
+import lock
+import pathutils
 import twitter
 
 
@@ -39,10 +42,30 @@ class Runner:
         except configparser.MissingSectionHeaderError:
             die('The configuration file "{}" is not valid.'.format(self._config_path))
 
+        self._user_name = self._get('app', 'target-user-name')
+
+        self._dir = os.path.join(os.path.expanduser('~'),
+                                 '.transequilibrium',
+                                 self._user_name)
+        pathutils.makedirs(self._dir)
+
+        self._lock = None
+
+    def __del__(self):
+        assert self._lock is None
+
     def run(self):
         '''
         Start translating the tweets.
         '''
+        def still_waiting_cb():
+            print('Waiting for the lock (is another instance running?).')
+
+        self._lock = lock.FileLock(os.path.join(self._dir, 'lock'),
+                                   timeout=2 * 60,
+                                   still_waiting_cb=still_waiting_cb)
+        self._lock.acquire()
+
         auth = self._get_auth()
 
         translator = azure.Translator(self._get('translator-api', 'client-secret'))
@@ -50,9 +73,13 @@ class Runner:
         client = twitter.Client(
             translator,
             auth,
-            self._get('app', 'target-user-name'),
+            self._user_name,
             self._get('app', 'start-since'))
         client.process_tweets()
+
+    def stop(self):
+        self._lock.release()
+        self._lock = None
 
     def _get_auth(self):
         '''
@@ -122,6 +149,7 @@ def main():
 
     runner = Runner(sys.argv[1])
     runner.run()
+    runner.stop()
 
 
 if __name__ == '__main__':
