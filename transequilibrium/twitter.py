@@ -8,14 +8,14 @@ class Client:
     Twitter client which runs the application.
     '''
 
-    def __init__(self, translator, auth, target_user_name, start_since):
+    def __init__(self, translator, auth, target_user_name, last_processed):
         '''
         Initialize a `Client` instance.
         '''
         self._translator = translator
         self._api = tweepy.API(auth)
         self._target_user_name = target_user_name
-        self._start_since = int(start_since)
+        self._last_processed = last_processed
 
     def process_tweets(self):
         '''
@@ -36,7 +36,7 @@ class Client:
         cursor = tweepy.Cursor(
             self._api.user_timeline,
             self._target_user_name,
-            since_id=self._start_since)
+            since_id=self._last_processed.get_last_processed())
 
         tweets = list(cursor.items())
         tweets.reverse()
@@ -80,3 +80,4 @@ class Client:
         res = self._translator.find_equilibrium('en', 'ja', self._escape_tweet_text(tweet.text))
         # FIXME: Post the translation and save the status somewhere.
         print(self._unescape_tweet_text(res.text))
+        self._last_processed.set_last_processed(tweet.id_str)

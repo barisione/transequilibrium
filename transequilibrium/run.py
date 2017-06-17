@@ -74,12 +74,39 @@ class Runner:
             translator,
             auth,
             self._user_name,
-            self._get('app', 'start-since'))
+            self)
         client.process_tweets()
 
     def stop(self):
         self._lock.release()
         self._lock = None
+
+    def _get_last_processed_file(self, mode):
+        return open(os.path.join(self._dir, 'last-processed'), mode)
+
+    def get_last_processed(self):
+        '''
+        Get the ID of the last processed tweet or, if no tweet was processed, the
+        start value from the configuration file.
+
+        Return value:
+            A string identifying the last processed tweet.
+        '''
+        try:
+            with self._get_last_processed_file('r') as last_processed:
+                return last_processed.read().strip()
+        except IOError:
+            return self._get('app', 'start-since')
+
+    def set_last_processed(self, tweet_id):
+        '''
+        Set the ID of the last processed tweet.
+
+        tweet_id:
+            The ID of the most recent tweet which was processed.
+        '''
+        with self._get_last_processed_file('w') as last_processed:
+            last_processed.write(tweet_id)
 
     def _get_auth(self):
         '''
