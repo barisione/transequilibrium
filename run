@@ -1,0 +1,7 @@
+#! /bin/bash
+
+if [ "$TRANSEQ_ENV" != true ]; then
+    source start-env
+fi
+
+python transequilibrium/run.py "$@"
