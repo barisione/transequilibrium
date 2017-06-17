@@ -1,3 +1,5 @@
+import re
+
 import tweepy
 
 
@@ -42,6 +44,32 @@ class Client:
 
         return tweets
 
+    @staticmethod
+    def _escape_tweet_text(text):
+        text = re.sub('@([a-zA-Z0-9_]+)',
+                      r'<transequilibrium:mention who="\1"></transequilibrium:mention>',
+                      text)
+        text = re.sub('#([a-zA-Z0-9_]+)',
+                      r'<transequilibrium:hashtag tag="\1"></transequilibrium:hashtag>',
+                      text)
+        return text
+
+    @staticmethod
+    def _unescape_tweet_text(text):
+        text = re.sub('<transequilibrium:mention who="([^"]+)"> *</transequilibrium:mention>',
+                      r'@\1',
+                      text)
+        assert '<transequilibrium:mention>' not in text
+        assert '</transequilibrium:mention>' not in text
+
+        text = re.sub('<transequilibrium:hashtag tag="([^"]+)"> *</transequilibrium:hashtag>',
+                      r'#\1',
+                      text)
+        assert '<transequilibrium:hashtag>' not in text
+        assert '</transequilibrium:hashtag>' not in text
+
+        return text
+
     def _process_tweet(self, tweet):
         '''
         Translate a tweet and post the translated one.
@@ -49,7 +77,6 @@ class Client:
         tweet:
             The tweet to translate.
         '''
-        # FIXME: Escape mentions and hashtags.
-        res = self._translator.find_equilibrium('en', 'ja', tweet.text)
+        res = self._translator.find_equilibrium('en', 'ja', self._escape_tweet_text(tweet.text))
         # FIXME: Post the translation and save the status somewhere.
-        print(res.text)
+        print(self._unescape_tweet_text(res.text))
