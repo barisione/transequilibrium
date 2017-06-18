@@ -1,5 +1,7 @@
 #! /bin/bash
 
+cd $(dirname "$0")
+
 if [ "$TRANSEQ_ENV" != true ]; then
     source start-env
 fi
