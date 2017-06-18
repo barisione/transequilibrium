@@ -120,6 +120,8 @@ class Runner:
         with open(os.path.join(self._dir, 'log'), 'a') as log_file:
             log_file.write(log_entry)
 
+        print(log_entry, end='')
+
     def _get_auth(self):
         '''
         Returns a `tweepy.OAuthHandler` to authenticate against Twitter for this
