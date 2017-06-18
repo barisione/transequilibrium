@@ -108,6 +108,16 @@ class Runner:
         with self._get_last_processed_file('w') as last_processed:
             last_processed.write(tweet_id)
 
+    def save_last_processed_log(self, log_entry):
+        '''
+        Save log_entry in the log file.
+
+        log_entry:
+            A message to dump to the log file.
+        '''
+        with open(os.path.join(self._dir, 'log'), 'a') as log_file:
+            log_file.write(log_entry)
+
     def _get_auth(self):
         '''
         Returns a `tweepy.OAuthHandler` to authenticate against Twitter for this

@@ -1,3 +1,6 @@
+import collections
+import datetime
+import json
 import re
 
 import tweepy
@@ -78,6 +81,32 @@ class Client:
             The tweet to translate.
         '''
         res = self._translator.find_equilibrium('en', 'ja', self._escape_tweet_text(tweet.text))
-        # FIXME: Post the translation and save the status somewhere.
-        print(self._unescape_tweet_text(res.text))
+        translated_text = self._unescape_tweet_text(res.text)
+        # FIXME: Post the translation.
+        print(translated_text)
+
         self._last_processed.set_last_processed(tweet.id_str)
+
+        # We save logs after the ID, so there's a chance we actually fail to save logs for
+        # this tweet. This is better than retweeting the same thing twice.
+
+        # Usually the original URL is in tweet.entities['urls'][0]['expanded_url'], but not
+        # for retweets, so we just build the URL here. If you follow the link and it's a
+        # retweet, then Twitter redirects you to the original one.
+        original_url = 'https://twitter.com/{}/status/{}'.format(self._target_user_name, tweet.id)
+        log_entry_dict = collections.OrderedDict([
+            ('original-id', tweet.id),
+            ('original-url', original_url),
+            ('original-time', tweet.created_at.isoformat()),
+            ('original-text', tweet.text),
+            ('translated-id', None),
+            ('translated-time', datetime.datetime.now().isoformat()),
+            ('translated-text', translated_text),
+            ('equilibrium-reached', res.equilibrium),
+            ])
+        log_entry = json.dumps(log_entry_dict,
+                               indent=4,
+                               separators=(',', ': '))
+        # The save function doesn't really use JSON (and I don't want it to do it either),
+        # but we are using JSON just because it's a convenient way to dump down some text.
+        self._last_processed.save_last_processed_log(log_entry + '\n')
