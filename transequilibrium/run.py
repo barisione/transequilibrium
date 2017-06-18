@@ -52,7 +52,8 @@ class Runner:
         self._lock = None
 
     def __del__(self):
-        assert self._lock is None
+        if self._lock is not None:
+            print('WARNING: The Runner was freed without calling the stop method.')
 
     def run(self):
         '''
@@ -78,8 +79,9 @@ class Runner:
         client.process_tweets()
 
     def stop(self):
-        self._lock.release()
-        self._lock = None
+        if self._lock:
+            self._lock.release()
+            self._lock = None
 
     def _get_last_processed_file(self, mode):
         return open(os.path.join(self._dir, 'last-processed'), mode)
@@ -185,8 +187,10 @@ def main():
         die('{} CONFIG-FILE'.format(sys.argv[0]))
 
     runner = Runner(sys.argv[1])
-    runner.run()
-    runner.stop()
+    try:
+        runner.run()
+    finally:
+        runner.stop()
 
 
 if __name__ == '__main__':
