@@ -97,15 +97,29 @@ class Client:
                 self._log({'following': user_id})
                 self._following.add(user_id)
 
+    @staticmethod
+    def _limit_text_length(text):
+        text = text.strip()
+
+        # Note that, nowadays, the length is in characters, not bytes.
+        limit = 140
+        if len(text) <= limit:
+            return text
+
+        last_space = text.rfind(' ', 0, limit + 1)
+        # Let's assume the translator doesn't give us a 140+ character long word (as the
+        # original tweet cannot be like this either).
+        # Dealing with this would be trivial, but I'd rather know what is going on.
+        assert last_space > 0
+
+        return text[:last_space].rstrip()
+
     def _post_tweet(self, text):
         # It would be nice to post this as a reply to the original tweet.
         # Unfortunately, using a mention at the beginning and in_reply_to_status_id still
         # seems to be affected by the 140 characters limit.
         # Moreover, I'm not sure spamming with replies would always be a good idea.
-
-        # The length seems to be now in characters, not bytes, so this will work fine.
-        text = text[:140]
-        return self._api.update_status(text)
+        return self._api.update_status(self._limit_text_length(text))
 
     @staticmethod
     def _get_tweet_url(user_name, tweet_id):
