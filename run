@@ -4,6 +4,11 @@ cd $(dirname "$0")
 
 if [ "$TRANSEQ_ENV" != true ]; then
     source start-env
+    if [ "$TRANSEQ_ENV" != true ]; then
+        # start-env should have printed something, but not called exit
+        # as it's a source script.
+        exit
+    fi
 fi
 
 python transequilibrium/run.py "$@"

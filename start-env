@@ -11,9 +11,11 @@ function _error_exit() {
 
 [ "$0" != "$BASH_SOURCE" ] || _error_exit "You should source this file, not execute it."
 
-if [ -d .env ]; then
+if [ -e .env/bin/activate ]; then
     source .env/bin/activate
-    TRANSEQ_ENV=true
+    if [ $? = 0 ]; then
+        TRANSEQ_ENV=true
+    fi
 else
     _error_message "The env doesn't exist, run 'make-env' to generate it."
 fi
