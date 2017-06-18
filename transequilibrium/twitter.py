@@ -1,5 +1,4 @@
 import collections
-import datetime
 import json
 import re
 
@@ -21,13 +20,13 @@ class Client:
         self._last_processed = last_processed
 
         self._following = set()
+        self._my_user = self._api.me()
 
     def process_tweets(self):
         '''
         Run the client on the new tweets available.
         '''
-        my_user = self._api.me()
-        for following in tweepy.Cursor(self._api.friends_ids, user_id=my_user.id_str).items():
+        for following in tweepy.Cursor(self._api.friends_ids, user_id=self._my_user.id_str).items():
             self._following.add(following)
 
         for tweet in self._get_tweets(10):
@@ -95,6 +94,23 @@ class Client:
                 self._log({'following': user_id})
                 self._following.add(user_id)
 
+    def _post_tweet(self, text):
+        # It would be nice to post this as a reply to the original tweet.
+        # Unfortunately, using a mention at the beginning and in_reply_to_status_id still
+        # seems to be affected by the 140 characters limit.
+        # Moreover, I'm not sure spamming with replies would always be a good idea.
+
+        # The length seems to be now in characters, not bytes, so this will work fine.
+        text = text[:140]
+        return self._api.update_status(text)
+
+    @staticmethod
+    def _get_tweet_url(user_name, tweet_id):
+        # Usually the original URL is in tweet.entities['urls'][0]['expanded_url'], but not
+        # for retweets, so we just build the URL here. If you follow the link and it's a
+        # retweet, then Twitter redirects you to the original one.
+        return 'https://twitter.com/{}/status/{}'.format(user_name, tweet_id)
+
     def _process_tweet(self, tweet):
         '''
         Translate a tweet and post the translated one.
@@ -106,26 +122,21 @@ class Client:
 
         res = self._translator.find_equilibrium('en', 'ja', self._escape_tweet_text(tweet.text))
         translated_text = self._unescape_tweet_text(res.text)
-        # FIXME: Post the translation.
-        print(translated_text)
+        new_tweet = self._post_tweet(translated_text)
 
         self._last_processed.set_last_processed(tweet.id_str)
 
         # We save logs after the ID, so there's a chance we actually fail to save logs for
         # this tweet. This is better than retweeting the same thing twice.
-
-        # Usually the original URL is in tweet.entities['urls'][0]['expanded_url'], but not
-        # for retweets, so we just build the URL here. If you follow the link and it's a
-        # retweet, then Twitter redirects you to the original one.
-        original_url = 'https://twitter.com/{}/status/{}'.format(self._target_user_name, tweet.id)
         log_entry = collections.OrderedDict([
             ('original-id', tweet.id),
-            ('original-url', original_url),
+            ('original-url', self._get_tweet_url(self._target_user_name, tweet.id)),
             ('original-time', tweet.created_at.isoformat()),
             ('original-text', tweet.text),
-            ('translated-id', None),
-            ('translated-time', datetime.datetime.now().isoformat()),
-            ('translated-text', translated_text),
+            ('translated-id', new_tweet.id),
+            ('translated-url', self._get_tweet_url(self._my_user.id, new_tweet.id)),
+            ('translated-time', new_tweet.created_at.isoformat()),
+            ('translated-text', new_tweet.text),
             ('equilibrium-reached', res.equilibrium),
             ])
         self._log(log_entry)
