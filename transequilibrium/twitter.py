@@ -118,25 +118,36 @@ class Client:
         tweet:
             The tweet to translate.
         '''
-        self._follow_mentions(tweet)
-
-        res = self._translator.find_equilibrium('en', 'ja', self._escape_tweet_text(tweet.text))
-        translated_text = self._unescape_tweet_text(res.text)
-        new_tweet = self._post_tweet(translated_text)
-
-        self._last_processed.set_last_processed(tweet.id_str)
-
-        # We save logs after the ID, so there's a chance we actually fail to save logs for
-        # this tweet. This is better than retweeting the same thing twice.
-        log_entry = collections.OrderedDict([
+        log_details = [
             ('original-id', tweet.id),
             ('original-url', self._get_tweet_url(self._target_user_name, tweet.id)),
             ('original-time', tweet.created_at.isoformat()),
             ('original-text', tweet.text),
-            ('translated-id', new_tweet.id),
-            ('translated-url', self._get_tweet_url(self._my_user.id, new_tweet.id)),
-            ('translated-time', new_tweet.created_at.isoformat()),
-            ('translated-text', new_tweet.text),
-            ('equilibrium-reached', res.equilibrium),
-            ])
-        self._log(log_entry)
+            ]
+
+        if hasattr(tweet, 'retweeted_status'):
+            # Note that retweets with an extra comment don't have retweeted_status, but
+            # they have quoted_status, so we don't skip them.
+            log_details += [
+                ('skipped-because-retweet', True),
+                ]
+        else:
+            self._follow_mentions(tweet)
+
+            res = self._translator.find_equilibrium('en', 'ja',
+                                                    self._escape_tweet_text(tweet.text))
+            translated_text = self._unescape_tweet_text(res.text)
+            new_tweet = self._post_tweet(translated_text)
+
+            log_details += [
+                ('translated-id', new_tweet.id),
+                ('translated-url', self._get_tweet_url(self._my_user.id, new_tweet.id)),
+                ('translated-time', new_tweet.created_at.isoformat()),
+                ('translated-text', new_tweet.text),
+                ('equilibrium-reached', res.equilibrium),
+                ]
+
+        self._last_processed.set_last_processed(tweet.id_str)
+        # We save logs after the ID, so there's a chance we actually fail to save logs for
+        # this tweet. This is better than retweeting the same thing twice.
+        self._log(collections.OrderedDict(log_details))
