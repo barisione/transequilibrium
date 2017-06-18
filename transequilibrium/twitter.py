@@ -15,12 +15,15 @@ class Client:
         Initialize a `Client` instance.
         '''
         self._translator = translator
-        self._api = tweepy.API(auth)
         self._target_user_name = target_user_name
         self._last_processed = last_processed
 
-        self._following = set()
+        self._api = tweepy.API(auth,
+                               wait_on_rate_limit=True,
+                               wait_on_rate_limit_notify=True,
+                               retry_count=5)
         self._my_user = self._api.me()
+        self._following = set()
 
     def process_tweets(self):
         '''
