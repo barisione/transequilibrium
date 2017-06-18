@@ -20,10 +20,16 @@ class Client:
         self._target_user_name = target_user_name
         self._last_processed = last_processed
 
+        self._following = set()
+
     def process_tweets(self):
         '''
         Run the client on the new tweets available.
         '''
+        my_user = self._api.me()
+        for following in tweepy.Cursor(self._api.friends_ids, user_id=my_user.id_str).items():
+            self._following.add(following)
+
         for tweet in self._get_tweets(10):
             self._process_tweet(tweet)
 
@@ -73,6 +79,22 @@ class Client:
 
         return text
 
+    def _log(self, json_log_entry):
+        log_entry = json.dumps(json_log_entry,
+                               indent=4,
+                               separators=(',', ': '))
+        # The save function doesn't really use JSON (and I don't want it to do it either),
+        # but we are using JSON just because it's a convenient way to dump down some text.
+        self._last_processed.save_last_processed_log(log_entry + '\n')
+
+    def _follow_mentions(self, tweet):
+        for user_dict in tweet.entities['user_mentions']:
+            user_id = user_dict['id']
+            if user_id not in self._following:
+                self._api.create_friendship(user_id=user_id)
+                self._log({'following': user_id})
+                self._following.add(user_id)
+
     def _process_tweet(self, tweet):
         '''
         Translate a tweet and post the translated one.
@@ -80,6 +102,8 @@ class Client:
         tweet:
             The tweet to translate.
         '''
+        self._follow_mentions(tweet)
+
         res = self._translator.find_equilibrium('en', 'ja', self._escape_tweet_text(tweet.text))
         translated_text = self._unescape_tweet_text(res.text)
         # FIXME: Post the translation.
@@ -94,7 +118,7 @@ class Client:
         # for retweets, so we just build the URL here. If you follow the link and it's a
         # retweet, then Twitter redirects you to the original one.
         original_url = 'https://twitter.com/{}/status/{}'.format(self._target_user_name, tweet.id)
-        log_entry_dict = collections.OrderedDict([
+        log_entry = collections.OrderedDict([
             ('original-id', tweet.id),
             ('original-url', original_url),
             ('original-time', tweet.created_at.isoformat()),
@@ -104,9 +128,4 @@ class Client:
             ('translated-text', translated_text),
             ('equilibrium-reached', res.equilibrium),
             ])
-        log_entry = json.dumps(log_entry_dict,
-                               indent=4,
-                               separators=(',', ': '))
-        # The save function doesn't really use JSON (and I don't want it to do it either),
-        # but we are using JSON just because it's a convenient way to dump down some text.
-        self._last_processed.save_last_processed_log(log_entry + '\n')
+        self._log(log_entry)
