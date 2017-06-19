@@ -63,7 +63,8 @@ class Client:
         cursor = tweepy.Cursor(
             self._api.user_timeline,
             self._target_user_name,
-            since_id=self._last_processed.get_last_processed())
+            since_id=self._last_processed.get_last_processed(),
+            tweet_mode='extended')
 
         tweets = list(cursor.items())
         tweets.reverse()
@@ -160,7 +161,7 @@ class Client:
             ('original-id', tweet.id),
             ('original-url', self._get_tweet_url(self._target_user_name, tweet.id)),
             ('original-time', tweet.created_at.isoformat()),
-            ('original-text', tweet.text),
+            ('original-text', tweet.full_text),
             ]
 
         if hasattr(tweet, 'retweeted_status'):
@@ -173,7 +174,7 @@ class Client:
             self._follow_mentions(tweet)
 
             res = self._translator.find_equilibrium('en', 'ja',
-                                                    self._escape_tweet_text(tweet.text))
+                                                    self._prepare_tweet_text(tweet.full_text))
             translated_text = self._unescape_tweet_text(res.text)
             new_tweet = self._post_tweet(translated_text)
 
