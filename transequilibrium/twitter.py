@@ -188,6 +188,15 @@ class Client:
                 ('translated-id', new_tweet.id),
                 ('translated-url', self._get_tweet_url(self._my_user.id, new_tweet.id)),
                 ('translated-time', new_tweet.created_at.isoformat()),
+                ]
+
+            # Maybe the tweet was shortened or mangled in some other way by Twitter.
+            if translated_text != new_tweet.text:
+                log_details += [
+                    ('translated-initial-text', translated_text),
+                    ]
+
+            log_details += [
                 ('translated-text', new_tweet.text),
                 ('equilibrium-reached', res.equilibrium),
                 ]
