@@ -115,9 +115,15 @@ class Client:
         for user_dict in tweet.entities['user_mentions']:
             user_id = user_dict['id']
             if user_id not in self._following:
+                screen_name = self._api.get_user(user_id).screen_name
+                url = 'https://twitter.com/{}'.format(screen_name)
                 self._api.create_friendship(user_id=user_id)
-                self._log({'following': user_id})
                 self._following.add(user_id)
+                self._log(collections.OrderedDict([
+                    ('following-id', user_id),
+                    ('following-screen-name', screen_name),
+                    ('following-url', url),
+                    ]))
 
     @staticmethod
     def _limit_text_length(text):
