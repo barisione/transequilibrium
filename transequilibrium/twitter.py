@@ -10,7 +10,8 @@ class Client:
     Twitter client which runs the application.
     '''
 
-    def __init__(self, translator, auth, target_user_name, last_processed):
+    #pylint: disable=too-many-arguments
+    def __init__(self, translator, auth, my_user_name, target_user_name, last_processed):
         '''
         Initialize a `Client` instance.
         '''
@@ -23,6 +24,12 @@ class Client:
                                wait_on_rate_limit_notify=True,
                                retry_count=5)
         self._my_user = self._api.me()
+        # We need the screen name before creating the API object, so here we check
+        # everything is correct.
+        # Ideally this should be reorganised to avoid this problem but I'm not sure
+        # how to layer this properly.
+        assert self._my_user.screen_name == my_user_name
+
         self._following = set()
 
     def process_tweets(self):

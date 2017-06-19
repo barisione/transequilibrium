@@ -42,11 +42,12 @@ class Runner:
         except configparser.MissingSectionHeaderError:
             die('The configuration file "{}" is not valid.'.format(self._config_path))
 
-        self._user_name = self._get('app', 'target-user-name')
+        self._my_user_name = self._get('app', 'my-user-name')
+        self._target_user_name = self._get('app', 'target-user-name')
 
         self._dir = os.path.join(os.path.expanduser('~'),
                                  '.transequilibrium',
-                                 self._user_name)
+                                 '{}-{}'.format(self._my_user_name, self._target_user_name))
         pathutils.makedirs(self._dir)
 
         self._lock = None
@@ -74,7 +75,8 @@ class Runner:
         client = twitter.Client(
             translator,
             auth,
-            self._user_name,
+            self._my_user_name,
+            self._target_user_name,
             self)
         client.process_tweets()
 
