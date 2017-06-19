@@ -47,7 +47,7 @@ class Runner:
 
         self._dir = os.path.join(os.path.expanduser('~'),
                                  '.transequilibrium',
-                                 '{}-{}'.format(self._my_user_name, self._target_user_name))
+                                 '{}-{}'.format(self._my_user_name, self._target_user_name).lower())
         pathutils.makedirs(self._dir)
 
         self._lock = None
