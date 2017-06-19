@@ -4,6 +4,15 @@ import re
 
 import tweepy
 
+try:
+    import html
+    #pylint: disable=invalid-name
+    html_unescape = html.unescape
+except (ImportError, NameError):
+    import HTMLParser
+    #pylint: disable=invalid-name
+    html_unescape = HTMLParser.HTMLParser().unescape
+
 
 class Client:
     '''
@@ -63,13 +72,18 @@ class Client:
         return tweets
 
     @staticmethod
-    def _escape_tweet_text(text):
+    def _prepare_tweet_text(text):
         text = re.sub('@([a-zA-Z0-9_]+)',
                       r'<transequilibrium:mention who="\1"></transequilibrium:mention>',
                       text)
         text = re.sub('#([a-zA-Z0-9_]+)',
                       r'<transequilibrium:hashtag tag="\1"></transequilibrium:hashtag>',
                       text)
+
+        # Twitter returns HTML-escaped strings, but expects unescaped strings.
+        # Probably this was done to avoid HTML injection.
+        text = html_unescape(text)
+
         return text
 
     @staticmethod
