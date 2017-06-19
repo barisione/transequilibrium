@@ -34,6 +34,8 @@ class Runner:
             The path to the configuration file containing the various keys,
             user name to target, etc.
         '''
+        self._lock = None
+
         self._config_path = config_path
         self._config = configparser.ConfigParser()
 
@@ -49,8 +51,6 @@ class Runner:
                                  '.transequilibrium',
                                  '{}-{}'.format(self._my_user_name, self._target_user_name).lower())
         pathutils.makedirs(self._dir)
-
-        self._lock = None
 
     def __del__(self):
         if self._lock is not None:
