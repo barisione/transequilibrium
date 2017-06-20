@@ -192,6 +192,7 @@ class Client:
         # Moreover, I'm not sure spamming with replies would always be a good idea.
         return self._api.update_status(
             self._limit_text_length(text),
+            tweet_mode='extended',
             attachment_url=self._get_tweet_url(self._target_user_name, original_tweet_id))
 
     @staticmethod
@@ -242,13 +243,13 @@ class Client:
                 ]
 
             # Maybe the tweet was shortened or mangled in some other way by Twitter.
-            if translated_text != new_tweet.text:
+            if translated_text != new_tweet.full_text:
                 log_details += [
                     ('translated-initial-text', translated_text),
                     ]
 
             log_details += [
-                ('translated-text', new_tweet.text),
+                ('translated-text', new_tweet.full_text),
                 ('equilibrium-reached', equilibrium),
                 ]
 
