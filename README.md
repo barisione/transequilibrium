@@ -5,7 +5,7 @@ TransEquilibrium
 
 The idea comes from [TranslationParty](http://www.translationparty.com/), but is applied to Twitter.
 
-[@ReTrumplated](https://twitter.com/ReTrumplated), translating Donald Trump's tweets, is the reason this bot was written.
+[@reTrumplation](https://twitter.com/reTrumplation), translating Donald Trump's tweets, is the reason this bot was written.
 
 **What's the point?**<br/>
 There's no point.
