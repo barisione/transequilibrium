@@ -21,3 +21,7 @@ The Microsoft Azure Translator API which is behind Bing Translator.
 
 **Why Bing instead of Google?**<br />
 Because Bing is free and because Google translations are better (so less fun).
+
+**Something the bot said is offensive or inappropriate**<br />
+Sorry. 😞<br />
+Unfortunately this is unavoidable with a bot that works automatically.
