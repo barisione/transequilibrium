@@ -1,6 +1,7 @@
 import collections
 import json
 import re
+import time
 
 import tweepy
 
@@ -48,7 +49,11 @@ class Client:
         for following in tweepy.Cursor(self._api.friends_ids, user_id=self._my_user.id_str).items():
             self._following.add(following)
 
-        for tweet in self._get_tweets(10):
+        for i, tweet in enumerate(self._get_tweets(10)):
+            # Try to space tweets a bit to avoid being suspended.
+            sleep_multiplier = min(i, 5)
+            time.sleep(sleep_multiplier * 15)
+
             self._process_tweet(tweet)
 
     def _get_tweets(self, max_count):
