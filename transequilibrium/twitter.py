@@ -185,12 +185,14 @@ class Client:
 
         return text[:last_space].rstrip()
 
-    def _post_tweet(self, text):
+    def _post_tweet(self, text, original_tweet_id):
         # It would be nice to post this as a reply to the original tweet.
         # Unfortunately, using a mention at the beginning and in_reply_to_status_id still
         # seems to be affected by the 140 characters limit.
         # Moreover, I'm not sure spamming with replies would always be a good idea.
-        return self._api.update_status(self._limit_text_length(text))
+        return self._api.update_status(
+            self._limit_text_length(text),
+            attachment_url=self._get_tweet_url(self._target_user_name, original_tweet_id))
 
     @staticmethod
     def _get_tweet_url(user_name, tweet_id):
@@ -226,7 +228,7 @@ class Client:
             equilibrium, sanitized_translated_text = self._translator.find_equilibrium(
                 'en', 'ja', sanitized_text)
             translated_text = self._unsanitize_tweet_text(sanitized_translated_text)
-            new_tweet = self._post_tweet(translated_text)
+            new_tweet = self._post_tweet(translated_text, tweet.id)
 
             if tweet.full_text != sanitized_text:
                 log_details += [
