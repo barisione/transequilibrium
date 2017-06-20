@@ -1,7 +1,7 @@
-ReTrumplated
-============
+reTrumplation
+=============
 
-[@ReTrumplated](https://twitter.com/ReTrumplated) is a Twitter bot which translates Donald Trump's tweets back and forth, sometimes achieving a funny result (and sometimes not).
+[@reTrumplation](https://twitter.com/reTrumplation) is a Twitter bot which translates Donald Trump's tweets back and forth, sometimes achieving a funny result (and sometimes not).
 
 This bot is implemented using [TransEquilibrium](https://github.com/barisione/transequilibrium/).
 
