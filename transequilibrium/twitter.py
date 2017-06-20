@@ -73,34 +73,72 @@ class Client:
         return tweets
 
     @staticmethod
-    def _prepare_tweet_text(text):
-        text = re.sub('@([a-zA-Z0-9_]+)',
-                      r'<transequilibrium:mention who="\1"></transequilibrium:mention>',
-                      text)
-        text = re.sub('#([a-zA-Z0-9_]+)',
-                      r'<transequilibrium:hashtag tag="\1"></transequilibrium:hashtag>',
-                      text)
+    def _sanitize_tweet(tweet):
+        # This is inspired by https://github.com/wjt/fewerror/ by Will Thompson.
+        text = tweet.full_text
+        entities = tweet.entities
+
+        # First get all the entities (with information on what is inside).
+        flat_entities = []
+        for entity_type, entity_key, value_key in (('media', 'media', 'media_url'),
+                                                   ('url', 'urls', 'url'),
+                                                   ('mention', 'user_mentions', 'screen_name'),
+                                                   ('hashtag', 'hashtags', 'text')):
+            for entity in entities.get(entity_key, []):
+                flat_entities.append({
+                    'type': entity_type,
+                    'key': entity_key,
+                    'entity': entity,
+                    'value': entity[value_key],
+                    })
+
+        # Sort them so we start from the end (as we are replacing text at a fixed
+        # position.
+        flat_entities.sort(key=lambda item: item['entity']['indices'],
+                           reverse=True)
+
+        # And finally replace the entity with a tag which the translator should
+        # ignore.
+        for info in flat_entities:
+            i, j = info['entity']['indices']
+            assert '"' not in info['value']
+            tag = '<transequilibrium:escaped ' + \
+                  'type="{type}" value="{value}"></escaped>'.format(**info)
+            text = text[:i] + tag + text[j:]
 
         # Twitter returns HTML-escaped strings, but expects unescaped strings.
         # Probably this was done to avoid HTML injection.
         text = html_unescape(text)
 
-        return text
+        return text.strip()
 
     @staticmethod
-    def _unescape_tweet_text(text):
-        text = re.sub('<transequilibrium:mention who="([^"]+)"> *</transequilibrium:mention>',
-                      r'@\1',
-                      text)
-        assert '<transequilibrium:mention>' not in text
-        assert '</transequilibrium:mention>' not in text
+    def _unsanitize_tweet_text(text):
+        replacements = {
+            'media': '{}',
+            'url': '{}',
+            'mention': '@{}',
+            'hashtag': '#{}',
+            }
 
-        text = re.sub('<transequilibrium:hashtag tag="([^"]+)"> *</transequilibrium:hashtag>',
-                      r'#\1',
-                      text)
-        assert '<transequilibrium:hashtag>' not in text
-        assert '</transequilibrium:hashtag>' not in text
+        def re_cb(match):
+            entity_type = match.group(1)
+            entity_value = match.group(2)
+            unsanitized_entity = replacements[entity_type].format(entity_value)
+            # The translator tends to eat spaces next to URLs, so we make sure there's
+            # spaces (and the regex eats all nearby spaces anyway).
+            return ' {} '.format(unsanitized_entity)
 
+        # Everybody know that the best way to parse XML/HTML is regexes.
+        text = re.sub(' *<transequilibrium:escaped type="([^"]+)" value="([^"]+)"> *',
+                      re_cb,
+                      text)
+        text = re.sub(' *</transequilibrium:escaped> *',
+                      ' ',
+                      text)
+        text = re.sub(' +', ' ', text)
+        assert '<transequilibrium:escaped' not in text
+        assert '</transequilibrium:escaped' not in text
         return text
 
     def _log(self, json_log_entry):
@@ -179,10 +217,16 @@ class Client:
         else:
             self._follow_mentions(tweet)
 
-            res = self._translator.find_equilibrium('en', 'ja',
-                                                    self._prepare_tweet_text(tweet.full_text))
-            translated_text = self._unescape_tweet_text(res.text)
+            sanitized_text = self._sanitize_tweet(tweet)
+            equilibrium, sanitized_translated_text = self._translator.find_equilibrium(
+                'en', 'ja', sanitized_text)
+            translated_text = self._unsanitize_tweet_text(sanitized_translated_text)
             new_tweet = self._post_tweet(translated_text)
+
+            if tweet.full_text != sanitized_text:
+                log_details += [
+                    ('original-sanitized-text', sanitized_text),
+                    ]
 
             log_details += [
                 ('translated-id', new_tweet.id),
@@ -198,7 +242,7 @@ class Client:
 
             log_details += [
                 ('translated-text', new_tweet.text),
-                ('equilibrium-reached', res.equilibrium),
+                ('equilibrium-reached', equilibrium),
                 ]
 
         self._last_processed.set_last_processed(tweet.id_str)
