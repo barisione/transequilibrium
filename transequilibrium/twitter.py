@@ -5,14 +5,7 @@ import time
 
 import tweepy
 
-try:
-    import html
-    #pylint: disable=invalid-name
-    html_unescape = html.unescape
-except (ImportError, NameError):
-    import HTMLParser
-    #pylint: disable=invalid-name
-    html_unescape = HTMLParser.HTMLParser().unescape
+import escaping
 
 
 class Client:
@@ -113,7 +106,7 @@ class Client:
 
         # Twitter returns HTML-escaped strings, but expects unescaped strings.
         # Probably this was done to avoid HTML injection.
-        text = html_unescape(text)
+        text = escaping.html_unescape(text)
 
         return text.strip()
 
