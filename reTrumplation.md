@@ -5,7 +5,7 @@ reTrumplation
 
 This bot is implemented using [TransEquilibrium](https://github.com/barisione/transequilibrium/).
 
-If any tweet is offensive or inappropriate, I'm sorry. This is just an effect of automatica translation. Contact me and I will remove the tweet.
+If any tweet is offensive or inappropriate, I'm sorry. This is just an effect of automatic translation. Contact me and I will remove the tweet.
 
 **Images used on Twitter:**
 
