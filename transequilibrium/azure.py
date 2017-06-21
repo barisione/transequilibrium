@@ -7,6 +7,8 @@ import xml.etree.ElementTree
 
 import requests
 
+import escaping
+
 
 Result = collections.namedtuple('Result', ['equilibrium', 'text'])
 
@@ -115,7 +117,7 @@ class Translator:
                     'Failed to translate the text. Got:\n{}.'.format(
                         textwrap.indent(response.text, ' ' * 4)))
 
-            return translation_element.text
+            return escaping.html_unescape(translation_element.text)
 
         assert last_connection_error is not None
         # pylint: disable=raising-bad-type
