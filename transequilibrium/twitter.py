@@ -6,6 +6,7 @@ import time
 import tweepy
 
 import escaping
+import offensive
 
 
 class Client:
@@ -244,6 +245,24 @@ class Client:
             log_details += [
                 ('translated-text', new_tweet.full_text),
                 ('equilibrium-reached', equilibrium),
+                ]
+
+            # For now we just log about offensiveness.
+            # Later I can verify how useful this check is and, if needed, not post the
+            # tweets.
+            original_offensive = not offensive.tact(tweet.full_text)
+            new_offensive = not offensive.tact(translated_text)
+            if original_offensive and new_offensive:
+                offensiveness = 'both'
+            elif original_offensive:
+                offensiveness = 'original'
+            elif new_offensive:
+                offensiveness = 'retranslated'
+            else:
+                offensiveness = 'none'
+
+            log_details += [
+                ('offensiveness', offensiveness),
                 ]
 
         self._last_processed.set_last_processed(tweet.id_str)
