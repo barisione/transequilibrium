@@ -14,7 +14,7 @@ function _error_exit() {
 if [ -e .env/bin/activate ]; then
     source .env/bin/activate
     if [ $? = 0 ]; then
-        TRANSEQ_ENV=true
+        export TRANSEQ_ENV=true
     fi
 else
     _error_message "The env doesn't exist, run 'make-env' to generate it."
