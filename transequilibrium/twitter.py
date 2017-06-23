@@ -140,13 +140,34 @@ class Client:
         assert '</transequilibrium:escaped' not in text
         return text
 
-    def _log(self, json_log_entry):
-        log_entry = json.dumps(json_log_entry,
-                               indent=4,
-                               separators=(',', ': '))
-        # The save function doesn't really use JSON (and I don't want it to do it either),
-        # but we are using JSON just because it's a convenient way to dump down some text.
-        self._last_processed.save_last_processed_log(log_entry + '\n')
+    @staticmethod
+    def _serialize_json(json_object):
+        serialized = json.dumps(json_object,
+                                indent=4,
+                                separators=(',', ': '))
+        if not serialized.endswith('\n'):
+            serialized += '\n'
+        return serialized
+
+    @staticmethod
+    def _serialize_list_to_ordered_dict(json_list):
+        return Client._serialize_json(collections.OrderedDict(json_list))
+
+    def _log(self, log_entry, extra_name=None):
+        self._last_processed.save_last_processed_log(log_entry, extra_name)
+
+    def _log_tweet_json(self, tweet):
+        if tweet is None:
+            return
+
+        #unformatted_json_text = tweet._json
+        #parsed_json = json.loads(unformatted_json_text)
+        #pylint: disable=protected-access
+        serialized_json = self._serialize_json(tweet._json)
+
+        extra_name = '{}-{}.json'.format(tweet.user.screen_name, tweet.id)
+
+        self._log(serialized_json, extra_name)
 
     def _follow_mentions(self, tweet):
         for user_dict in tweet.entities['user_mentions']:
@@ -156,11 +177,12 @@ class Client:
                 url = 'https://twitter.com/{}'.format(screen_name)
                 self._api.create_friendship(user_id=user_id)
                 self._following.add(user_id)
-                self._log(collections.OrderedDict([
-                    ('following-id', user_id),
-                    ('following-screen-name', screen_name),
-                    ('following-url', url),
-                    ]))
+                self._log(
+                    self._serialize_list_to_ordered_dict([
+                        ('following-id', user_id),
+                        ('following-screen-name', screen_name),
+                        ('following-url', url),
+                        ]))
 
     @staticmethod
     def _limit_text_length(text):
@@ -216,12 +238,23 @@ class Client:
             log_details += [
                 ('skipped-because-retweet', True),
                 ]
+            intermediate_translations = None
+            new_tweet = None
         else:
             self._follow_mentions(tweet)
 
+            intermediate_translations = []
+            def translation_cb(counter, language, intermediate_text):
+                intermediate_translations.append(collections.OrderedDict([
+                    ('counter', counter),
+                    ('language', language),
+                    ('text', intermediate_text),
+                    ]))
+
             sanitized_text = self._sanitize_tweet(tweet)
             equilibrium, sanitized_translated_text = self._translator.find_equilibrium(
-                'en', 'ja', sanitized_text)
+                'en', 'ja', sanitized_text,
+                translation_cb)
             translated_text = self._unsanitize_tweet_text(sanitized_translated_text)
             new_tweet = self._post_tweet(translated_text, tweet.id)
 
@@ -268,4 +301,12 @@ class Client:
         self._last_processed.set_last_processed(tweet.id_str)
         # We save logs after the ID, so there's a chance we actually fail to save logs for
         # this tweet. This is better than retweeting the same thing twice.
-        self._log(collections.OrderedDict(log_details))
+        self._log(self._serialize_list_to_ordered_dict(log_details))
+
+        self._log_tweet_json(tweet)
+        self._log_tweet_json(new_tweet)
+
+        if intermediate_translations:
+            json_text = self._serialize_json(intermediate_translations)
+            extra_name = '{}-{}-translations.json'.format(tweet.user.screen_name, tweet.id)
+            self._log(json_text, extra_name)

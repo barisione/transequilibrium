@@ -50,7 +50,8 @@ class Runner:
         self._dir = os.path.join(os.path.expanduser('~'),
                                  '.transequilibrium',
                                  '{}-{}'.format(self._my_user_name, self._target_user_name).lower())
-        pathutils.makedirs(self._dir)
+        self._extra_dir = os.path.join(self._dir, 'extras')
+        pathutils.makedirs(self._extra_dir)
 
     def __del__(self):
         if self._lock is not None:
@@ -112,17 +113,30 @@ class Runner:
         with self._get_last_processed_file('w') as last_processed:
             last_processed.write(tweet_id)
 
-    def save_last_processed_log(self, log_entry):
+    def save_last_processed_log(self, log_entry, extra_name=None):
         '''
         Save log_entry in the log file.
 
         log_entry:
             A message to dump to the log file.
+        extra_name:
+            If `None`, the log is saved to the main file.
+            If not `None`, the log is saved to an extra file in another directory
+            with this parameter as basename.
         '''
-        with open(os.path.join(self._dir, 'log'), 'a') as log_file:
+        if extra_name is None:
+            path = os.path.join(self._dir, 'log')
+            mode = 'a'
+        else:
+            path = os.path.join(self._extra_dir, extra_name)
+            mode = 'w'
+
+        with open(path, mode) as log_file:
             log_file.write(log_entry)
 
-        print(log_entry, end='')
+        if extra_name is None:
+            # Don't log too much to stdout.
+            print(log_entry, end='')
 
     def _get_auth(self):
         '''
