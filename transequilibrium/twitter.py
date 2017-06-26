@@ -6,6 +6,7 @@ import time
 import tweepy
 
 import escaping
+import equilibrium
 import offensive
 
 
@@ -252,7 +253,8 @@ class Client:
                     ]))
 
             sanitized_text = self._sanitize_tweet(tweet)
-            equilibrium, sanitized_translated_text = self._translator.find_equilibrium(
+            equilibrium_reached, sanitized_translated_text = equilibrium.find_equilibrium(
+                self._translator,
                 'en', 'ja', sanitized_text,
                 translation_cb)
             translated_text = self._unsanitize_tweet_text(sanitized_translated_text)
@@ -277,7 +279,7 @@ class Client:
 
             log_details += [
                 ('translated-text', new_tweet.full_text),
-                ('equilibrium-reached', equilibrium),
+                ('equilibrium-reached', equilibrium_reached),
                 ]
 
             # For now we just log about offensiveness.

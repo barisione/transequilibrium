@@ -123,76 +123,17 @@ class Translator:
         # pylint: disable=raising-bad-type
         raise last_connection_error
 
-    def find_equilibrium(self, main_lang, intermediate_lang, initial_text, translation_cb=None):
-        '''
-        Translated `initial_text` between `main_lang` and `intermediate_lang` until
-        equilibrium is found, i.e. retranslating the text again doesn't change the
-        translation.
-
-        main_lang:
-            The language for `initial_text`.
-        intermediate_lang:
-            The intermediate language for the translation.
-        initial_text:
-            The text to translate.
-        translation_cb:
-            An optional function to call when a translation is made (for debugging
-            purposes).
-            The function's gets as parameters the retry count, the language for the
-            translated text (i.e. alternatively `intermediate_lang` and `main_lang`),
-            ane the translated text.
-        '''
-        last_text = initial_text
-
-        for retry_count in range(15):
-            intermediate_text = self.translate(main_lang, intermediate_lang, last_text)
-            if translation_cb:
-                translation_cb(retry_count, intermediate_lang, intermediate_text)
-
-            retranslated_text = self.translate(intermediate_lang, main_lang, intermediate_text)
-            if translation_cb:
-                translation_cb(retry_count, main_lang, retranslated_text)
-
-            if last_text == retranslated_text:
-                # Equilibrium!
-                return Result(True, last_text)
-
-            # No equilibrium (yet?).
-            last_text = retranslated_text
-
-        # We gave up as it doesn't look like we are going to reach an equilibrium.
-        return Result(False, last_text)
-
 
 def main():
-    import os
     import sys
-
-    try:
-        client_secret_path = '~/.bing-translator.cfg'
-        with open(os.path.expanduser(client_secret_path)) as client_secret_file:
-            client_secret = client_secret_file.read().strip()
-    except IOError:
-        print('Specify a secret for the Bing Translator API in "{}".'.format(client_secret_path),
-              file=sys.stderr)
-        raise SystemExit(1)
+    import equilibrium
 
     if len(sys.argv) > 1:
         text = ' '.join(sys.argv[1:])
     else:
-        text = input('Text: ')
+        text = None
 
-    def translator_cb(counter, lang, translated_text):
-        print('[{counter}] {lang}: {translated_text}'.format(
-            counter=counter,
-            lang=lang,
-            translated_text=translated_text,
-            ))
-
-    translator = Translator(client_secret)
-    res = translator.find_equilibrium('en', 'ja', text, translator_cb)
-    equilibrium_text = '' if res.equilibrium else ' (equilibrium not found)'
-    print('RESULT{}: {}'.format(equilibrium_text, res.text))
+    equilibrium.debug_run(Translator, '.bing-translator.cfg', text)
 
 
 if __name__ == "__main__":
