@@ -19,8 +19,12 @@ I thought other languages, like Russian, could be more fun, but Japanese seems t
 **What do you use to translate text?**<br/>
 The Microsoft Azure Translator API which is behind Bing Translator.
 
-**Why Bing instead of Google?**<br />
-Because Bing is free and because Google translations are better (so less fun).
+**How do you translate the text?**<br />
+TransEquilibrium can use Azure Translator or Google Translate (either using the “base” model or the neural network-based model called “nmt”).
+
+1. Google with the “nmt” model produces the best sentences which actually have some kind of meaning.
+2. Azure is the second best, but sentences not always have a meaning.
+3. Google with the “base” model produces the worst quality sentences. Moreover, the sentences are often very long, so not suitable to tweeting.
 
 **Something the bot said is offensive or inappropriate**<br />
 Sorry. 😞<br />
