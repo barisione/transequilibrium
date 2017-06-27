@@ -79,6 +79,8 @@ class Translator:
         '''
         self._auth = AuthTokenClient(client_secret)
 
+        self.name = 'azure'
+
     def translate(self, from_lang, to_lang, text):
         '''
         Translate `text` from `from_lang` to `to_lang`.

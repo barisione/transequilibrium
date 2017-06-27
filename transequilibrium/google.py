@@ -24,6 +24,10 @@ class Translator:
 
         self._service = googleapiclient.discovery.build('translate', 'v2', developerKey=dev_key)
 
+    @property
+    def name(self):
+        return 'google-{}'.format(self._model)
+
     def translate(self, from_lang, to_lang, text):
         '''
         Translate `text` from `from_lang` to `to_lang`.

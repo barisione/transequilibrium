@@ -280,6 +280,7 @@ class Client:
             log_details += [
                 ('translated-text', new_tweet.full_text),
                 ('equilibrium-reached', equilibrium_reached),
+                ('translator', self._translator.name),
                 ]
 
             # For now we just log about offensiveness.
