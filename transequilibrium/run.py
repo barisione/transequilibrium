@@ -4,7 +4,6 @@ import sys
 
 import tweepy
 
-import azure
 import lock
 import pathutils
 import twitter
@@ -57,6 +56,18 @@ class Runner:
         if self._lock is not None:
             print('WARNING: The Runner was freed without calling the stop method.')
 
+    def _get_translator(self):
+        translator_name = self._get('app', 'translator')
+        if translator_name == 'azure':
+            import azure
+            return azure.Translator(self._get('azure-api', 'client-secret'))
+        elif translator_name in ('google-base', 'google-nmt'):
+            import google
+            model = translator_name.split('-')[1]
+            return google.Translator(self._get('google-api', 'key'), model)
+        else:
+            die('Invalid translation API: {}.'.format(translator_name))
+
     def run(self):
         '''
         Start translating the tweets.
@@ -70,8 +81,7 @@ class Runner:
         self._lock.acquire()
 
         auth = self._get_auth()
-
-        translator = azure.Translator(self._get('translator-api', 'client-secret'))
+        translator = self._get_translator()
 
         client = twitter.Client(
             translator,
