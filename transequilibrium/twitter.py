@@ -102,8 +102,9 @@ class Client:
         for info in flat_entities:
             i, j = info['entity']['indices']
             assert '"' not in info['value']
-            tag = '<transequilibrium:escaped ' + \
-                  'type="{type}" value="{value}"></escaped>'.format(**info)
+            tag = ('<transequilibrium:escaped ' + \
+                   'type="{type}" value="{value}">' + \
+                   '</transequilibrium:escaped>').format(**info)
             text = text[:i] + tag + text[j:]
 
         # Twitter returns HTML-escaped strings, but expects unescaped strings.
