@@ -191,12 +191,12 @@ class Client:
         text = text.strip()
 
         # Note that, nowadays, the length is in characters, not bytes.
-        limit = 140
+        limit = 280
         if len(text) <= limit:
             return text
 
         last_space = text.rfind(' ', 0, limit + 1)
-        # Let's assume the translator doesn't give us a 140+ character long word (as the
+        # Let's assume the translator doesn't give us a 280+ character long word (as the
         # original tweet cannot be like this either).
         # Dealing with this would be trivial, but I'd rather know what is going on.
         assert last_space > 0
@@ -206,7 +206,7 @@ class Client:
     def _post_tweet(self, text, original_tweet_id):
         # It would be nice to post this as a reply to the original tweet.
         # Unfortunately, using a mention at the beginning and in_reply_to_status_id still
-        # seems to be affected by the 140 characters limit.
+        # seems to be affected by the 280 characters limit.
         # Moreover, I'm not sure spamming with replies would always be a good idea.
         return self._api.update_status(
             self._limit_text_length(text),
