@@ -1,6 +1,7 @@
 import configparser
 import os
 import sys
+import time
 
 import tweepy
 
@@ -214,11 +215,24 @@ def main():
     if len(sys.argv) != 2:
         die('{} CONFIG-FILE'.format(sys.argv[0]))
 
-    runner = Runner(sys.argv[1])
-    try:
-        runner.run()
-    finally:
-        runner.stop()
+    failed = 0
+    while True:
+        try:
+            runner = Runner(sys.argv[1])
+            try:
+                runner.run()
+            finally:
+                runner.stop()
+        except Exception as exc:
+            failed += 1
+            if failed > 5:
+                print('Failed too many times, giving up.', file=sys.stderr)
+                print(file=sys.stderr)
+                raise
+            print('Got exception, will retry in {} minute(s): {}'.format(failed, exc),
+                  file=sys.stderr)
+            time.sleep(failed * 60)
+            print('Retrying now...', file=sys.stderr)
 
 
 if __name__ == '__main__':
